@@ -1,0 +1,316 @@
+# @Time     : 2024/7/10 18:15
+# @Author   : Hang Zhou
+# @Email    : fjklqq@gmail.com
+# @Software : Python 3.11
+# @About    :
+__all__ = ["TextClassificationFactory"]
+
+import os
+from typing import Callable, Union, Optional, Any
+
+import datasets
+import numpy as np
+import pandas as pd
+from transformers import (
+    TrainingArguments,
+    PretrainedConfig, PreTrainedTokenizer, PreTrainedModel, trainer_utils, Trainer
+)
+from transformers.trainer import logger
+
+from tt4l.factory.base import BaseTaskFactory, DatasetType, BasePipeline
+from tt4l.factory.text_classification import (
+    DataPreProcessForSequenceClassification,
+    TextClassificationPredictArguments,
+    TextClassificationTaskArguments,
+    TextClassificationPipelineArguments
+)
+from tt4l.metrics.compute.text_classification import ComputeAccuracyMetrics, ComputeF1Metrics
+
+
+class TextClassificationFactory(BaseTaskFactory):
+    tasks_name = "text-classification"
+    description = "Text classification is a common NLP task that assigns a label or class to text. "
+    description_zh = "文本分类任务，为文本标记一个标签或分类"
+    default_args_yaml_name = 'text_classification_task.yaml'
+
+    task_args_cls = TextClassificationTaskArguments
+    predict_args_cls = TextClassificationPredictArguments
+    pipeline_args_cls = TextClassificationPipelineArguments
+
+    def __init__(self):
+        self.labels = None
+        self.label_feature_is_sequence = False
+
+        self.load_model = self._load_sequence_classification_model
+
+    def after_load_dataset(
+            self,
+            training_args: TrainingArguments,
+            task_args: Union[TextClassificationTaskArguments, TextClassificationPredictArguments],
+            raw_datasets: Union[datasets.Dataset, datasets.IterableDatasetDict],
+            **kwargs
+    ):
+        label_feature = raw_datasets['train'].info.features[task_args.label_column_name]  # .names
+        self.label_feature_is_sequence = isinstance(label_feature, datasets.Sequence)
+        if self.label_feature_is_sequence:
+            self.labels = label_feature.feature.names
+
+        else:
+            self.labels = label_feature.names
+
+    def load_pretrained_config(
+            self,
+            training_args: TrainingArguments,
+            task_args: TextClassificationTaskArguments,
+            **kwargs
+    ) -> PretrainedConfig:
+        return self.load_config(
+            training_args=training_args,
+            task_args=task_args,
+            num_labels=len(self.labels)
+        )
+
+    def load_metrics(
+            self,
+            training_args: TrainingArguments,
+            task_args: Union[TextClassificationTaskArguments, TextClassificationPredictArguments],
+            raw_datasets: DatasetType,
+            config: PretrainedConfig,
+            tokenizer: PreTrainedTokenizer,
+            model: PreTrainedModel,
+            data_preprocess_function: Optional[Callable] = None,
+            train_dataset=None,
+            eval_dataset=None,
+            predict_dataset=None,
+            data_collator_function: Optional[Callable] = None,
+            **kwargs
+    ) -> Callable:
+        if self.label_feature_is_sequence:
+            _compute_metrics = ComputeF1Metrics()
+        else:
+            _compute_metrics = ComputeAccuracyMetrics()
+        return _compute_metrics
+
+    def after_load_model(
+            self,
+            training_args: TrainingArguments,
+            task_args: Union[TextClassificationTaskArguments, TextClassificationPredictArguments],
+            config: PretrainedConfig,
+            tokenizer: PreTrainedTokenizer,
+            model: PreTrainedModel,
+            **kwargs
+    ):
+        if model.config.label2id != PretrainedConfig(num_labels=len(self.labels)).label2id:
+            if sorted(model.config.label2id.keys()) != sorted(self.labels):
+                logger.warning(
+                    "Your model seems to have been trained with labels, but they don't match the dataset: ",
+                    f"model labels: {sorted(self._model.config.label2id.keys())}, dataset labels:"
+                    f" {sorted(self.labels)}.\nIgnoring the model labels as a result.",
+                )
+        else:
+            model.config.label2id = {label: idx for idx, label in enumerate(self.labels)}
+            model.config.id2label = {idx: label for idx, label in enumerate(self.labels)}
+            config.label2id = model.config.label2id
+            config.id2label = model.config.id2label
+
+    def init_data_preprocess_function(
+            self,
+            training_args: TrainingArguments,
+            task_args: TextClassificationTaskArguments,
+            raw_datasets: Union[datasets.DatasetDict, datasets.IterableDatasetDict],
+            config: PretrainedConfig,
+            tokenizer: PreTrainedTokenizer,
+            model: PreTrainedModel,
+            **kwargs
+    ) -> Callable:
+        return DataPreProcessForSequenceClassification(tokenizer=tokenizer,
+                                                       padding=("max_length"
+                                                                if task_args.pad_to_max_length else
+                                                                False),
+                                                       max_seq_length=task_args.max_seq_length,
+                                                       label_to_id=model.config.label2id,
+                                                       sentence1_key=task_args.text_column_name,
+                                                       sentence2_key=task_args.text_pair_column_name,
+                                                       label_key=(task_args.label_column_name
+                                                                  if isinstance(task_args,
+                                                                                TextClassificationTaskArguments)
+                                                                  else None)
+                                                       )
+
+    def init_data_collator_function(
+            self,
+            training_args: TrainingArguments,
+            task_args: Union[TextClassificationTaskArguments, TextClassificationPredictArguments],
+            raw_datasets: DatasetType,
+            config: PretrainedConfig,
+            tokenizer: PreTrainedTokenizer,
+            model: PreTrainedModel,
+            data_preprocess_function: Optional[Callable] = None,
+            train_dataset=None,
+            eval_dataset=None,
+            predict_dataset=None,
+            **kwargs
+    ) -> Callable:
+        if task_args.pad_to_max_length:
+            from transformers import default_data_collator
+
+            data_collator = default_data_collator
+        elif training_args.fp16:
+            from transformers import DataCollatorWithPadding
+
+            data_collator = DataCollatorWithPadding(tokenizer, pad_to_multiple_of=8)
+        else:
+            data_collator = None
+
+        return data_collator
+
+    def predict_result_parser(self,
+                              training_args: TrainingArguments,
+                              task_args: Union[TextClassificationTaskArguments, TextClassificationPredictArguments],
+                              last_checkpoint,
+                              raw_datasets: DatasetType,
+                              config: PretrainedConfig,
+                              tokenizer: PreTrainedTokenizer,
+                              model: PreTrainedModel,
+                              predict_dataset,
+                              trainer: Trainer,
+                              predictions: trainer_utils.PredictionOutput,
+                              **kwargs
+                              ):
+        predictions = predictions.predictions
+        if model.config.problem_type == 'multi_label_classification':
+            predictions = [
+                ';;'.join([config.id2label[item[0]] for item in np.argwhere(prediction > 0)])
+                for prediction in predictions]
+        else:
+            predictions = [config.id2label[item] for item in np.argmax(predictions, axis=1)]
+        return predictions
+
+    def save_trainer_predict_result(
+            self,
+            training_args: TrainingArguments,
+            task_args: Union[TextClassificationTaskArguments, TextClassificationPredictArguments],
+            trainer: Trainer,
+            predict_dataset,
+            result: Any
+    ):
+        output_predictions_file = os.path.join(training_args.output_dir, "predict_results.csv")
+        if trainer.is_world_process_zero():
+            data = pd.DataFrame({'text': predict_dataset[task_args.text_column_name]})
+            if task_args.text_pair_column_name:
+                data['text_pair'] = predict_dataset[task_args.text_pair_column_name]
+            data['labels'] = result
+            data.to_csv(output_predictions_file, index=False, encoding='utf-8-sig')
+
+            logger.info("Predict results saved at {}".format(output_predictions_file))
+
+    def after_load_predict_data(self, training_args: TrainingArguments,
+                                predict_args: TextClassificationPredictArguments,
+                                data: pd.DataFrame, **kwargs):
+        self._predict_columns = [predict_args.text_column_name]
+        if predict_args.text_column_name not in data.columns:
+            raise ValueError(f"Column {predict_args.text_column_name} not in data!")
+        if predict_args.text_pair_column_name is not None:
+            self._predict_columns.append(predict_args.text_pair_column_name)
+            if predict_args.text_pair_column_name not in data.columns:
+                raise ValueError(f"Column {predict_args.text_column_name} not in data!")
+
+    def init_predict_dataset_from_dataframe(
+            self, training_args: TrainingArguments, predict_args: TextClassificationPredictArguments,
+            data: pd.DataFrame,
+            data_preprocess_function: Callable, **kwargs
+    ) -> DatasetType:
+        dataset = datasets.Dataset.from_pandas(data.fillna('').loc[:, self._predict_columns])
+        return datasets.DatasetDict({'predict': dataset})
+
+    def init_data_preprocess_function_for_predict(
+            self,
+            training_args: TrainingArguments,
+            predict_args: TextClassificationPredictArguments,
+            raw_datasets: DatasetType,
+            config: PretrainedConfig,
+            tokenizer: PreTrainedTokenizer,
+            model: PreTrainedModel,
+            **kwargs
+    ) -> Callable:
+        return DataPreProcessForSequenceClassification(tokenizer=tokenizer,
+                                                       padding=("max_length"
+                                                                if predict_args.pad_to_max_length else
+                                                                False),
+                                                       max_seq_length=predict_args.max_seq_length,
+                                                       label_to_id=model.config.label2id,
+                                                       sentence1_key=predict_args.text_column_name,
+                                                       sentence2_key=predict_args.text_pair_column_name,
+                                                       label_key=None)
+
+    def init_data_collator_function_for_predict(
+            self,
+            training_args: TrainingArguments,
+            predict_args: TextClassificationPredictArguments,
+            raw_datasets: DatasetType,
+            config: PretrainedConfig,
+            tokenizer: PreTrainedTokenizer,
+            model: PreTrainedModel,
+            data_preprocess_function: Optional[Callable] = None,
+            train_dataset=None,
+            eval_dataset=None,
+            predict_dataset=None,
+            **kwargs
+    ) -> Callable:
+        if predict_args.pad_to_max_length:
+            from transformers import default_data_collator
+
+            data_collator = default_data_collator
+        elif training_args.fp16:
+            from transformers import DataCollatorWithPadding
+
+            data_collator = DataCollatorWithPadding(tokenizer, pad_to_multiple_of=8)
+        else:
+            data_collator = None
+
+        return data_collator
+
+    def save_result_for_predict(
+            self, training_args: TrainingArguments,
+            predict_args: TextClassificationPredictArguments,
+            data: pd.DataFrame, result: Any,
+            config: Optional[PretrainedConfig] = None,
+            tokenizer: Optional[PreTrainedTokenizer] = None,
+            model: Optional[PreTrainedModel] = None,
+    ) -> str:
+        data['predictions'] = result
+        result_output_path = os.path.join(predict_args.result_output_dir, 'predictions.csv')
+        data.to_csv(result_output_path, index=False, encoding='utf-8-sig')
+        return result_output_path
+
+
+class TextClassificationPipeline(BasePipeline):
+    def __init__(self, model: PreTrainedModel, tokenizer: PreTrainedTokenizer, config: PretrainedConfig,
+                 device: Optional[str] = None, is_multi_label: bool = False, use_text_pair: bool = False,
+                 mark_line: float = 0.5, disable_sigmoid: bool = False):
+        super(TextClassificationPipeline, self).__init__(
+            model=model, tokenizer=tokenizer, config=config, device=device,
+        )
+        self.is_multi_label = is_multi_label
+        self.use_text_pair = use_text_pair
+        self.mark_line = mark_line
+        self.disable_sigmoid = disable_sigmoid
+
+    def inference(self, text_input: str, text_pair_input: str):
+        if self.use_text_pair:
+            model_inputs = self.tokenizer(text=text_input,
+                                          text_pair=text_pair_input,
+                                          return_tensors='pt')
+        else:
+            model_inputs = self.tokenizer(text=text_input,
+                                          return_tensors='pt')
+        predictions = self._model(self.move_inputs_to_device(model_inputs)).logits.detach().cpu().numpy()
+        if self._model.config.problem_type == 'multi_label_classification':
+            if not self.disable_sigmoid:
+                predictions = 1 / (1 + np.exp(-predictions))
+            predictions = [
+                ';;'.join([self.config.id2label[item[0]] for item in np.argwhere(prediction > self.mark_line)])
+                for prediction in predictions]
+        else:
+            predictions = [self.config.id2label[item] for item in np.argmax(predictions, axis=1)]
+        return predictions
