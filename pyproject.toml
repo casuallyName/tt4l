@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "tt4l"
+version = "0.0.1"
+description = "Training a transformer model for language"
+authors = ["ZhouHang <fjklqq@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+typer = "^0.12.3"
+torch = "^2.1.0"
+transformers = "^4.40"
+pydantic = "^2.6.0"
+scikit-learn = "^1.4.0"
+evaluate = "^0.4.2"
+datasets = "^2.17.0"
+
+[tool.poetry.scripts]
+tt4l = "tt4l.cli.main:app"
+
+[[tool.poetry.source]]
+name = "mirrors"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
+priority = "primary"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
