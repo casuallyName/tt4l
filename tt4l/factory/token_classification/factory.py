@@ -42,7 +42,6 @@ class TokenClassificationFactory(BaseTaskFactory):
 
     task_args_cls = TokenClassificationTaskArguments
     predict_args_cls = TokenClassificationPredictArguments
-    pipeline_args_cls = TokenClassificationPredictArguments
 
     def __init__(self):
         self.token_column_name = None

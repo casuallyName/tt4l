@@ -3,7 +3,7 @@
 # @Email    : fjklqq@gmail.com
 # @Software : Python 3.11
 # @About    :
-__all__ = ["BaseTaskArguments", "BasePredictArguments", "BasePipelineArguments"]
+__all__ = ["BaseTaskArguments", "BasePredictArguments"]
 
 from dataclasses import dataclass, field
 from typing import Optional, Union, List
@@ -218,16 +218,3 @@ class BasePredictArguments:
             raise ValueError("model_name_or_path cannot be None")
         if self.result_output_dir is None or self.result_output_dir == '':
             self.result_output_dir = 'ResultOutputs'
-
-
-@dataclass
-class BasePipelineArguments:
-    model_name_or_path: str = field(
-        metadata={"help": "Path to pretrained model or model identifier from huggingface.co/models"}
-    )
-    config_name: Optional[str] = field(
-        default=None, metadata={"help": "Pretrained config name or path if not the same as model_name"}
-    )
-    tokenizer_name: Optional[str] = field(
-        default=None, metadata={"help": "Pretrained tokenizer name or path if not the same as model_name"}
-    )

@@ -31,10 +31,6 @@ TRAIN_YAML_TEMPLATE = """# @Time     : {file_create_time}
 # PredictArguments -> 预测参数，该类别下参数用于调整 predict 阶段 (非训练阶段的 predict)
 {predict_arguments_info}
 
-# 3. 推理管道参数
-# PipelineArguments -> Pipeline参数，该类别下参数用于调整创建推理管道
-{pipeline_arguments_info}
-
 """
 
 
@@ -58,7 +54,7 @@ def _make_default_value(data_object):
             if param.default == inspect.Parameter.empty}
 
 
-def init_yaml(task_type, task_args_cls, predict_args_cls, pipeline_args_cls, yaml_name, replace=False):
+def init_yaml(task_type, task_args_cls, predict_args_cls, yaml_name, replace=False):
     from tt4l.cli.default_arguments import DefaultTrainingArguments
     yaml_path = os.path.join(os.getcwd(), yaml_name)
     if os.path.exists(yaml_path) and replace is False:
@@ -73,13 +69,11 @@ def init_yaml(task_type, task_args_cls, predict_args_cls, pipeline_args_cls, yam
         training_args = DefaultTrainingArguments(**_make_default_value(DefaultTrainingArguments))
         task_args = task_args_cls(task_name=task_type, **_make_default_value(task_args_cls))
         predict_args = predict_args_cls(**_make_default_value(predict_args_cls))
-        pipeline_args = pipeline_args_cls(**_make_default_value(pipeline_args_cls))
 
         task_type_info = yaml.safe_dump({'TaskType': task_type}, sort_keys=False)
         training_arguments_info = yaml.safe_dump({'TrainingArguments': asdict(training_args)}, sort_keys=False)
         task_arguments_info = yaml.safe_dump({'TaskArguments': asdict(task_args)}, sort_keys=False)
         predict_arguments_info = yaml.safe_dump({'PredictArguments': asdict(predict_args)}, sort_keys=False)
-        pipeline_arguments_info = yaml.safe_dump({'PipelineArguments': asdict(pipeline_args)}, sort_keys=False)
 
         with open(yaml_name, 'w', encoding='utf-8') as f:
             f.write(
@@ -90,7 +84,6 @@ def init_yaml(task_type, task_args_cls, predict_args_cls, pipeline_args_cls, yam
                     training_arguments_info=training_arguments_info.replace(': null', ':'),
                     task_arguments_info=task_arguments_info.replace(': null', ':'),
                     predict_arguments_info=predict_arguments_info,
-                    pipeline_arguments_info=pipeline_arguments_info.replace(': null', ':'),
                 ).replace(': null', ':')
 
             )

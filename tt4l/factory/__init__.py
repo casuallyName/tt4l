@@ -14,7 +14,6 @@ _import_structure = {
     "text_classification.arguments": [
         "TextClassificationTaskArguments",
         "TextClassificationPredictArguments",
-        "TextClassificationPipelineArguments"
     ],
     "text_classification.data": ["DataPreProcessForSequenceClassification", ],
     "text_classification.factory": ["TextClassificationFactory"],

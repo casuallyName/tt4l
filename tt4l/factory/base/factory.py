@@ -10,7 +10,6 @@ from typing import Callable, Union, Optional, Any
 
 import datasets
 import pandas as pd
-import torch
 import transformers
 import transformers.utils.logging
 from transformers import (trainer_utils, TrainingArguments, Trainer,
@@ -20,7 +19,7 @@ from transformers import (trainer_utils, TrainingArguments, Trainer,
                           )
 from transformers.trainer import logger
 
-from tt4l.factory.base.arguments import BaseTaskArguments, BasePredictArguments, BasePipelineArguments
+from tt4l.factory.base.arguments import BaseTaskArguments, BasePredictArguments
 
 DatasetType = Union[datasets.Dataset, datasets.DatasetDict, datasets.IterableDatasetDict, datasets.IterableDataset]
 
@@ -841,7 +840,6 @@ class BaseTaskFactory(_BaseTaskUtilFactory,
 
     task_args_cls: Callable[[Any], BaseTaskArguments]
     predict_args_cls: Callable[[Any], BasePredictArguments]
-    pipeline_args_cls: Callable[[Any], BasePipelineArguments]
 
     _last_checkpoint = None
     _raw_datasets = None
@@ -1206,49 +1204,3 @@ class BaseTaskFactory(_BaseTaskUtilFactory,
                                                    config=self._config, tokenizer=self._tokenizer, model=self._model
                                                    )
         return result_path
-
-
-class BasePipeline:
-    def __init__(self, model: PreTrainedModel, tokenizer: PreTrainedTokenizer, config: PretrainedConfig,
-                 device: str = 'cuda', ):
-        self._model = model
-        self.tokenizer = tokenizer
-        self.config = config
-        self._device = self._auto_device(device)
-        self._model.eval()
-
-    def _auto_device(self, device: Optional[str] = None):
-        if device is None:
-            if torch.cuda.is_available():
-                return torch.device('cuda')
-            elif torch.backends.mps.is_available():
-                if torch.backends.mps.is_built():
-                    return torch.device('mps')
-                else:
-                    logger.warning("MPS device is not available, "
-                                   "because the current PyTorch install was not built with MPS enabled.")
-            return torch.device('cpu')
-        else:
-            return torch.device(device)
-
-    @property
-    def device(self) -> torch.device:
-        return self._device
-
-    @device.setter
-    def device(self, device: torch.device):
-        self._model.to(device)
-        self._device = device
-
-    @property
-    def model(self):
-        return self._model
-
-    def move_inputs_to_device(self, model_inputs):
-        return {k: v.to(self.device) for k, v in model_inputs.items()}
-
-    def __call__(self, *args, **kwargs):
-        return self.inference(*args, **kwargs)
-
-    def inference(self, *args, **kwargs):
-        raise NotImplementedError

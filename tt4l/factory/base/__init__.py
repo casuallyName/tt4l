@@ -12,18 +12,17 @@ _import_structure = {
     "arguments": [
         "BaseTaskArguments",
         "BasePredictArguments",
-        "BasePipelineArguments",
     ],
     "data_process": [
         "DataPreProcess",
     ],
-    "factory": ["DatasetType", "BaseTaskFactory", "BasePipeline"]
+    "factory": ["DatasetType", "BaseTaskFactory"]
 }
 
 if TYPE_CHECKING:
-    from .arguments import BaseTaskArguments, BasePredictArguments, BasePipelineArguments
+    from .arguments import BaseTaskArguments, BasePredictArguments
     from .data_process import DataPreProcess
-    from .factory import BaseTaskFactory, DatasetType, BasePipeline
+    from .factory import BaseTaskFactory, DatasetType
 
 
 else:

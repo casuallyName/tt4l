@@ -17,12 +17,11 @@ from transformers import (
 )
 from transformers.trainer import logger
 
-from tt4l.factory.base import BaseTaskFactory, DatasetType, BasePipeline
+from tt4l.factory.base import BaseTaskFactory, DatasetType
 from tt4l.factory.text_classification import (
     DataPreProcessForSequenceClassification,
     TextClassificationPredictArguments,
     TextClassificationTaskArguments,
-    TextClassificationPipelineArguments
 )
 from tt4l.metrics.compute.text_classification import ComputeAccuracyMetrics, ComputeF1Metrics
 
@@ -35,7 +34,6 @@ class TextClassificationFactory(BaseTaskFactory):
 
     task_args_cls = TextClassificationTaskArguments
     predict_args_cls = TextClassificationPredictArguments
-    pipeline_args_cls = TextClassificationPipelineArguments
 
     def __init__(self):
         self.labels = None
@@ -282,35 +280,3 @@ class TextClassificationFactory(BaseTaskFactory):
         result_output_path = os.path.join(predict_args.result_output_dir, 'predictions.csv')
         data.to_csv(result_output_path, index=False, encoding='utf-8-sig')
         return result_output_path
-
-
-class TextClassificationPipeline(BasePipeline):
-    def __init__(self, model: PreTrainedModel, tokenizer: PreTrainedTokenizer, config: PretrainedConfig,
-                 device: Optional[str] = None, is_multi_label: bool = False, use_text_pair: bool = False,
-                 mark_line: float = 0.5, disable_sigmoid: bool = False):
-        super(TextClassificationPipeline, self).__init__(
-            model=model, tokenizer=tokenizer, config=config, device=device,
-        )
-        self.is_multi_label = is_multi_label
-        self.use_text_pair = use_text_pair
-        self.mark_line = mark_line
-        self.disable_sigmoid = disable_sigmoid
-
-    def inference(self, text_input: str, text_pair_input: str):
-        if self.use_text_pair:
-            model_inputs = self.tokenizer(text=text_input,
-                                          text_pair=text_pair_input,
-                                          return_tensors='pt')
-        else:
-            model_inputs = self.tokenizer(text=text_input,
-                                          return_tensors='pt')
-        predictions = self._model(self.move_inputs_to_device(model_inputs)).logits.detach().cpu().numpy()
-        if self._model.config.problem_type == 'multi_label_classification':
-            if not self.disable_sigmoid:
-                predictions = 1 / (1 + np.exp(-predictions))
-            predictions = [
-                ';;'.join([self.config.id2label[item[0]] for item in np.argwhere(prediction > self.mark_line)])
-                for prediction in predictions]
-        else:
-            predictions = [self.config.id2label[item] for item in np.argmax(predictions, axis=1)]
-        return predictions
