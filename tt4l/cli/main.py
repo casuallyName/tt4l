@@ -10,11 +10,10 @@ from typing import Annotated
 
 import typer
 import yaml
-from transformers import TrainingArguments
 
+from tt4l.cli.inference import inference_app
 from tt4l.cli.utils import echo_error_info, echo_log_message, init_yaml
 from tt4l.factory.auto import AutoFactory, TaskFactoryNotFound, FACTORY_MAP
-from tt4l.cli.inference import inference_app
 
 app = typer.Typer(name='tt4l',
                   help='Training a transformer model for language',
@@ -108,6 +107,7 @@ def desc(
         task_type: Annotated[str, typer.Argument(metavar='TASK', callback=task_name_checker,
                                                  help=f"Task type mush one of [{ALL_TASKS_STRING}]")]
 ):
+    from transformers import TrainingArguments
     try:
         task = AutoFactory.from_task_type(task_type=task_type)
         typer.secho('Task description:', bold=True)
@@ -140,7 +140,6 @@ def init(task_type: Annotated[str, typer.Argument(metavar='task type',
         init_yaml(
             task_type=task_type,
             task_args_cls=task.task_args_cls,
-            pipeline_args_cls=task.pipeline_args_cls,
             predict_args_cls=task.predict_args_cls,
             yaml_name=task.default_args_yaml_name,
             replace=replace,
@@ -151,6 +150,7 @@ def init(task_type: Annotated[str, typer.Argument(metavar='task type',
 
 @app.command(name='train', short_help='Train model')
 def train(yaml_path: Annotated[str, typer.Argument(metavar='Path|Text', help='Training arguments yaml file path')]):
+    from transformers import TrainingArguments
     if not os.path.exists(yaml_path):
         raise FileNotFoundError(f"File {yaml_path} does not exist!")
     yaml_args = yaml.safe_load(open(yaml_path, encoding='utf-8'))
