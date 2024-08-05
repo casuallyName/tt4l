@@ -7,8 +7,6 @@ __all__ = ["AutoFactory", "FACTORY_MAP", "TaskFactoryNotFound"]
 
 import importlib
 
-from tt4l.factory.base import BaseTaskFactory
-
 FACTORY_MAP = {
     'text_classification': 'TextClassificationFactory',
     'token_classification': 'TokenClassificationFactory',
@@ -19,7 +17,7 @@ class TaskFactoryNotFound(Exception):
     pass
 
 
-class AutoFactory(BaseTaskFactory):
+class AutoFactory:
 
     @staticmethod
     def factory_loader(task_type):
@@ -30,6 +28,6 @@ class AutoFactory(BaseTaskFactory):
             raise TaskFactoryNotFound(f'Task type {task_type} is not supported')
 
     @classmethod
-    def from_task_type(cls, task_type) -> BaseTaskFactory:
+    def from_task_type(cls, task_type):
         factory_cls = cls.factory_loader(task_type)
         return factory_cls()
