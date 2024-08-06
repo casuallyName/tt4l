@@ -3,7 +3,7 @@
 # @Email    : fjklqq@gmail.com
 # @Software : Python 3.11
 # @About    :
-__all__ = ["ComputeMseMetrics", "ComputeAccuracyMetrics", "ComputeF1Metrics"]
+__all__ = ["ComputeMetricsForMse", "ComputeMetricsForAccuracy", "ComputeMetricsForF1"]
 
 from typing import Dict, Literal
 
@@ -15,7 +15,7 @@ from tt4l.metrics.evaluate.f1 import F1
 from tt4l.metrics.evaluate.mse import Mse
 
 
-class ComputeMseMetrics(BaseComputeMetric):
+class ComputeMetricsForMse(BaseComputeMetric):
     def __init__(self, **kwargs):
         super().__init__()
         self.metric = Mse(**kwargs)
@@ -26,7 +26,7 @@ class ComputeMseMetrics(BaseComputeMetric):
         return self.metric.compute(predictions=predictions, references=p.label_ids)
 
 
-class ComputeAccuracyMetrics(BaseComputeMetric):
+class ComputeMetricsForAccuracy(BaseComputeMetric):
     def __init__(self, **kwargs):
         super().__init__()
         self.metric = Accuracy(**kwargs)
@@ -37,7 +37,7 @@ class ComputeAccuracyMetrics(BaseComputeMetric):
         return self.metric.compute(predictions=predictions, references=p.label_ids)
 
 
-class ComputeF1Metrics(BaseComputeMetric):
+class ComputeMetricsForF1(BaseComputeMetric):
     def __init__(self, average: Literal['micro', 'macro', 'samples', 'weighted', 'binary'] = "micro", **kwargs):
         super().__init__()
         self.metric = F1(**kwargs)

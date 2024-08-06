@@ -24,7 +24,14 @@ _import_structure = {
     "token_classification.factory": ["TokenClassificationFactory"],
 
     "universal_information_extraction": [],
-    "universal_information_extraction.factory": ["UniversalInformationExtractionFactory"],
+    "universal_information_extraction.arguments": [
+        "UniversalInformationExtractionTaskArguments",
+        "UniversalInformationExtractionPredictArguments"
+    ],
+    "universal_information_extraction.data": [
+        "DataPreProcessForUniversalInformationExtraction"
+    ],
+    "universal_information_extraction.factory": ["UniversalInformationExtractionFactory"]
 }
 
 if TYPE_CHECKING:

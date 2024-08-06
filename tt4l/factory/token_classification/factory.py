@@ -18,7 +18,10 @@ from transformers import (
     TrainingArguments,
     PreTrainedTokenizerFast,
     PretrainedConfig,
-    DataCollatorForTokenClassification, PreTrainedTokenizer, PreTrainedModel, trainer_utils
+    DataCollatorForTokenClassification,
+    PreTrainedTokenizer,
+    PreTrainedModel,
+    trainer_utils
 )
 from transformers.trainer import logger
 
@@ -29,7 +32,7 @@ from tt4l.factory.token_classification import (
     DataPreProcessForTokenClassification,
     utils
 )
-from tt4l.metrics.compute.token_classification import ComputeSeqevalMetrics
+from tt4l.metrics.compute.token_classification import ComputeMetricsWithSeqeval
 from tt4l.parser.sequence_parser import SequenceParser
 
 
@@ -183,7 +186,7 @@ class TokenClassificationFactory(BaseTaskFactory):
             data_collator_function: Optional[Callable] = None,
             **kwargs
     ) -> Callable:
-        return ComputeSeqevalMetrics(
+        return ComputeMetricsWithSeqeval(
             label_list=self.label_list,
             return_entity_level_metrics=task_args.return_entity_level_metrics
         )

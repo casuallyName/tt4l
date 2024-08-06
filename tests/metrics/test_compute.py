@@ -26,3 +26,8 @@ class TextClassificationComputeTestCase(BaseTestCase):
     def test_ComputeF1Metrics(self):
         self.model_import_test('tt4l.metrics.compute.text_classification.ComputeF1Metrics')
         warnings.warn("Need add more testing methods.", ToDo)
+
+    def test_ComputeUniversalInformationExtractionMetrics(self):
+        self.model_import_test(
+            'tt4l.metrics.compute.universal_information_extraction.ComputeUniversalInformationExtractionMetrics')
+        warnings.warn("Need add more testing methods.", ToDo)

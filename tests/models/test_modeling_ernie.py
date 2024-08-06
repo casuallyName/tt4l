@@ -13,13 +13,13 @@ from tt4l.utils.testing_utils import BaseTestCase
 
 class ModelingBertTestCase(BaseTestCase):
 
-    def test_ErnieForUniversalInformationExtraction(self):
-        self.model_import_test('tt4l.models.modeling_bert.ErnieForUniversalInformationExtraction')
-        from tt4l import ErnieForUniversalInformationExtraction
+    def test_ErnieForUie(self):
+        self.model_import_test('tt4l.models.modeling_bert.ErnieForUie')
+        from tt4l import ErnieForUie
 
         model_inputs = self.fake_inputs()
 
-        model = ErnieForUniversalInformationExtraction(self.ernie_config())
+        model = ErnieForUie(self.ernie_config())
 
         model_inputs['start_positions'] = torch.zeros(self.test_batch_size, self.test_seq_length)
         model_inputs['end_positions'] = torch.zeros(self.test_batch_size, self.test_seq_length)

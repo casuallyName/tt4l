@@ -13,7 +13,11 @@ import numpy as np
 import pandas as pd
 from transformers import (
     TrainingArguments,
-    PretrainedConfig, PreTrainedTokenizer, PreTrainedModel, trainer_utils, Trainer
+    PretrainedConfig,
+    PreTrainedTokenizer,
+    PreTrainedModel,
+    trainer_utils,
+    Trainer
 )
 from transformers.trainer import logger
 
@@ -23,7 +27,7 @@ from tt4l.factory.text_classification import (
     TextClassificationPredictArguments,
     TextClassificationTaskArguments,
 )
-from tt4l.metrics.compute.text_classification import ComputeAccuracyMetrics, ComputeF1Metrics
+from tt4l.metrics.compute.text_classification import ComputeMetricsForAccuracy, ComputeMetricsForF1
 
 
 class TextClassificationFactory(BaseTaskFactory):
@@ -84,9 +88,9 @@ class TextClassificationFactory(BaseTaskFactory):
             **kwargs
     ) -> Callable:
         if self.label_feature_is_sequence:
-            _compute_metrics = ComputeF1Metrics()
+            _compute_metrics = ComputeMetricsForF1()
         else:
-            _compute_metrics = ComputeAccuracyMetrics()
+            _compute_metrics = ComputeMetricsForAccuracy()
         return _compute_metrics
 
     def after_load_model(

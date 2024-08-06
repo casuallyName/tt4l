@@ -1080,6 +1080,7 @@ class BaseTaskFactory(_BaseTaskUtilFactory,
         training_args = TrainingArguments(output_dir=predict_args.result_output_dir,
                                           per_device_eval_batch_size=predict_args.per_device_batch_size,
                                           report_to=predict_args.report_to)
+        self.set_logger(training_args=training_args)
 
         if predict_args.result_output_dir is None or predict_args.result_output_dir == "":
             raise ValueError(f"result_output_dir must be specified!")

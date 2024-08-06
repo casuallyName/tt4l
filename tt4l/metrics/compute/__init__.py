@@ -8,20 +8,29 @@ from typing import TYPE_CHECKING
 from tt4l.utils.import_utils import LazyModule
 
 _import_structure = {
-    "text_classification": ["ComputeMseMetrics", "ComputeAccuracyMetrics", "ComputeF1Metrics"],
-    "token_classification": ['ComputeSeqevalMetrics'],
+    "text_classification": [
+        "ComputeMetricsForMse",
+        "ComputeMetricsForAccuracy",
+        "ComputeMetricsForF1",
+    ],
+    "token_classification": [
+        'ComputeMetricsWithSeqeval',
+    ],
+    "universal_information_extraction": [
+        "ComputeMetricsForUniversalInformationExtraction",
+    ],
 }
 
 if TYPE_CHECKING:
-    from tt4l.metrics.compute.text_classification import (
-        ComputeMseMetrics,
-        ComputeF1Metrics,
-        ComputeAccuracyMetrics
+    from .text_classification import (
+        ComputeMetricsForMse,
+        ComputeMetricsForAccuracy,
+        ComputeMetricsForF1
     )
 
-    from tt4l.metrics.compute.token_classification import (
-        ComputeSeqevalMetrics,
-    )
+    from .token_classification import ComputeMetricsWithSeqeval
+
+    from .universal_information_extraction import ComputeMetricsForUniversalInformationExtraction
 
 
 else:

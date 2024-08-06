@@ -4,7 +4,9 @@
 # @Email    : fjklqq@gmail.com
 # @Software : Python 3.11
 # @About    :
+import json
 import os
+import re
 
 import typer
 from rich.console import Console
@@ -130,6 +132,61 @@ def token_classification(
                                     )
             typer.echo(typer.style(f'Prediction: ', fg=typer.colors.BLUE), nl=False)
             console.print(results)
+
+
+@inference_app.command(name='universal_information_extraction', short_help='Inference for UIE task')
+def universal_information_extraction(
+        model_path: Annotated[str, typer.Argument(metavar='model_path')],
+        device: Annotated[str, typer.Option('-d', '--device')] = 'cpu',
+):
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"File {model_path} does not exist!")
+    echo_log_message('info', 'Loading models ...')
+    import torch
+    from tt4l.factory import UniversalInformationExtractionFactory
+    from tt4l.factory.universal_information_extraction.modules import Schema
+    from transformers import AutoConfig, AutoTokenizer, AutoModel
+    config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+    model = AutoModel.from_pretrained(model_path, config=config,
+                                      trust_remote_code=True)
+    model.to(torch.device(device)).eval()
+    console = Console()
+    factory = UniversalInformationExtractionFactory()
+    building_schema = True
+    schema = None
+    while building_schema:
+        typer.echo('You can input a json or string for building schema.')
+        schema_input = typer.prompt("Input schema")
+        try:
+            schema_dict = json.loads(schema_input)
+        except:
+            try:
+                schema_dict = eval(schema_input)
+            except:
+                if ''.join(re.findall("[\u4e00-\u9fa5A-Za-z0-9]+", schema_input)) == schema_input:
+                    schema_dict = schema_input
+                else:
+                    echo_log_message("warning", "Can not parser this schema.")
+                    continue
+        try:
+            schema = Schema(schema_dict)
+            typer.echo(typer.style(f'Schema: ', fg=typer.colors.BLUE), nl=False)
+            console.print(schema.as_schema_dict)
+            building_schema = not typer.confirm("Do you want to use this schema?")
+        except:
+            echo_log_message("warning", "Can not parser this schema.")
+    while True:
+        text_input = typer.prompt("Input text")
+        typer.echo('Predicting ...')
+        result = factory.predict_single(schema=schema,
+                                        text=text_input,
+                                        tokenizer=tokenizer,
+                                        model=model,
+                                        truncation=True
+                                        )
+        typer.echo(typer.style(f'Prediction: ', fg=typer.colors.BLUE), nl=False)
+        console.print(result)
 
 
 if __name__ == '__main__':

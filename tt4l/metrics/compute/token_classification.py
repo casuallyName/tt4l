@@ -3,7 +3,7 @@
 # @Email    : fjklqq@gmail.com
 # @Software : Python 3.11
 # @About    :
-__all__ = ['ComputeSeqevalMetrics']
+__all__ = ['ComputeMetricsWithSeqeval']
 
 from typing import Dict
 
@@ -13,8 +13,8 @@ from tt4l.metrics.base import BaseComputeMetric, MetricInput
 from tt4l.metrics.evaluate.seqeval import Seqeval
 
 
-class ComputeSeqevalMetrics(BaseComputeMetric):
-    def __init__(self, label_list, return_entity_level_metrics: bool = False,ignore_token_id: int = -100, **kwargs):
+class ComputeMetricsWithSeqeval(BaseComputeMetric):
+    def __init__(self, label_list, return_entity_level_metrics: bool = False, ignore_token_id: int = -100, **kwargs):
         super().__init__()
         self.metric = Seqeval(**kwargs)
         self.label_list = label_list

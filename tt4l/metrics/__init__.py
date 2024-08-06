@@ -9,8 +9,17 @@ from tt4l.utils.import_utils import LazyModule
 
 _import_structure = {
     "compute": [],
-    "compute.text_classification": ["ComputeMseMetrics", "ComputeAccuracyMetrics", "ComputeF1Metrics"],
-    "compute.token_classification": ['ComputeSeqevalMetrics'],
+    "compute.text_classification": [
+        "ComputeMetricsForMse",
+        "ComputeMetricsForAccuracy",
+        "ComputeMetricsForF1",
+    ],
+    "compute.token_classification": [
+        'ComputeMetricsWithSeqeval',
+    ],
+    "compute.universal_information_extraction": [
+        "ComputeMetricsForUniversalInformationExtraction",
+    ],
 
     "evaluate": [],
     "evaluate.accuracy": ["Accuracy"],

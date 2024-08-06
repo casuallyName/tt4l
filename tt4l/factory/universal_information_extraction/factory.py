@@ -5,33 +5,60 @@
 # @About    :
 __all__ = ["UniversalInformationExtractionFactory"]
 
-from typing import List, Dict, Union, Any
+import json
+import os
+from typing import List, Dict, Union, Any, Callable, Optional
 
+import datasets
+import numpy as np
+import pandas as pd
 import torch
 from tqdm import trange
-from transformers import PreTrainedTokenizerBase, PreTrainedModel
+from transformers import (
+    PreTrainedTokenizerBase,
+    PreTrainedModel,
+    TrainingArguments,
+    PretrainedConfig,
+    PreTrainedTokenizer,
+    DataCollatorForTokenClassification,
+    AutoModel,
+    Trainer,
+    trainer_utils
+)
+from transformers.trainer import logger
 
-from tt4l.factory.base import BaseTaskFactory
+from tt4l.factory.base import BaseTaskFactory, DatasetType
+from tt4l.factory.universal_information_extraction.arguments import (
+    UniversalInformationExtractionTaskArguments,
+    UniversalInformationExtractionPredictArguments
+)
+from tt4l.factory.universal_information_extraction.data import DataPreProcessForUniversalInformationExtraction
 from tt4l.factory.universal_information_extraction.modules import (
     PositionInfo,
     Schema,
     Result,
     SchemaForBatch
 )
+from tt4l.metrics.compute.universal_information_extraction import ComputeMetricsForUniversalInformationExtraction
 from tt4l.text_utils import ChineseSentenceSpliter
 
 
 class UniversalInformationExtractionFactory(BaseTaskFactory):
-    tasks_name = "uie"
-    description = ("Token classification assigns a label to individual tokens in a sentence. "
-                   "One of the most common task is Named Entity Recognition (NER)。")
+    tasks_name = "universal-information-extraction"
+    description = ("The Unified Information Extraction Framework (UIE) "
+                   "for general information extraction achieves unified modeling of tasks such as "
+                   "entity extraction, relationship extraction, event extraction, and sentiment analysis, "
+                   "and enables good transferability and generalization ability between different tasks.")
     description_zh = ("通用信息抽取统一框架UIE，"
                       "该框架实现了实体抽取、关系抽取、事件抽取、情感分析等任务的统一建模，"
                       "并使得不同任务间具备良好的迁移和泛化能力。")
-    default_args_yaml_name = 'uie_task.yaml'
+    default_args_yaml_name = 'universal_information_extraction_task.yaml'
+
+    task_args_cls = UniversalInformationExtractionTaskArguments
+    predict_args_cls = UniversalInformationExtractionPredictArguments
 
     @staticmethod
-    def uie_inference(
+    def inference(
             prompts: List[str],
             texts: List[str],
             tokenizer: PreTrainedTokenizerBase, model: PreTrainedModel, batch_size: int = 8,
@@ -107,7 +134,7 @@ class UniversalInformationExtractionFactory(BaseTaskFactory):
         return results
 
     @staticmethod
-    def predict_single(schema: Union[List, Dict, str], text: str,
+    def predict_single(schema: Union[Schema, List, Dict, str], text: str,
                        tokenizer: PreTrainedTokenizerBase, model: PreTrainedModel, split_text: bool = False,
                        inference_batch_size: int = 8, text_max_length: int = 512, token_max_length: int = 512,
                        truncation: bool = False, position_prob: float = 0.5, show_progress: bool = True,
@@ -131,7 +158,10 @@ class UniversalInformationExtractionFactory(BaseTaskFactory):
         Returns:
 
         """
-        tree = Schema(schema)
+        if isinstance(schema, Schema):
+            tree = schema
+        else:
+            tree = Schema(schema)
         if split_text:
             spliter = ChineseSentenceSpliter(max_length=text_max_length, truncation=truncation)
             split_texts = spliter.split(text)
@@ -140,7 +170,7 @@ class UniversalInformationExtractionFactory(BaseTaskFactory):
 
         tree.reset_status(split_texts)
         for inputs in tree:
-            inference_result = UniversalInformationExtractionFactory.uie_inference(
+            inference_result = UniversalInformationExtractionFactory.inference(
                 prompts=inputs.prompts,
                 texts=inputs.texts,
                 tokenizer=tokenizer,
@@ -171,7 +201,7 @@ class UniversalInformationExtractionFactory(BaseTaskFactory):
         return tree.result_dump()
 
     @staticmethod
-    def predict_batch(schema: Union[List, Dict, str], texts: List[str],
+    def predict_batch(schema: Union[SchemaForBatch, List, Dict, str], texts: List[str],
                       tokenizer: PreTrainedTokenizerBase, model: PreTrainedModel, split_text: bool = False,
                       inference_batch_size: int = 8, text_batch_size: int = 8,
                       text_max_length: int = 512, token_max_length: int = 512,
@@ -199,7 +229,10 @@ class UniversalInformationExtractionFactory(BaseTaskFactory):
         Returns:
 
         """
-        tree = SchemaForBatch(schema)
+        if isinstance(schema, SchemaForBatch):
+            tree = schema
+        else:
+            tree = SchemaForBatch(schema)
         spliter = ChineseSentenceSpliter(max_length=text_max_length, truncation=truncation)
         results = []
         if show_progress and len(texts) > text_batch_size:
@@ -214,7 +247,7 @@ class UniversalInformationExtractionFactory(BaseTaskFactory):
                 split_texts = [(idx, text[:text_max_length], 0) for idx, text in enumerate(batch_texts)]
             tree.reset_status(split_texts)
             for batch_inputs in tree:
-                batch_inference_results = UniversalInformationExtractionFactory.uie_inference(
+                batch_inference_results = UniversalInformationExtractionFactory.inference(
                     prompts=batch_inputs.prompts,
                     texts=batch_inputs.texts,
                     tokenizer=tokenizer,
@@ -247,3 +280,266 @@ class UniversalInformationExtractionFactory(BaseTaskFactory):
                 tree.step(batch_step_results)
             results.extend(tree.result_dump())
         return results
+
+    def load_model(
+            self,
+            training_args: TrainingArguments,
+            task_args: Union[
+                UniversalInformationExtractionTaskArguments, UniversalInformationExtractionPredictArguments],
+            config: PretrainedConfig,
+            tokenizer: PreTrainedTokenizer,
+            **kwargs
+    ) -> PreTrainedModel:
+        return AutoModel.from_pretrained(
+            task_args.model_name_or_path,
+            from_tf=bool(".ckpt" in task_args.model_name_or_path),
+            config=config,
+            cache_dir=task_args.cache_dir,
+            revision=task_args.model_revision,
+            use_auth_token=True if task_args.token else None,
+            trust_remote_code=task_args.trust_remote_code,
+            **kwargs
+        )
+
+    def load_pretrained_config(
+            self,
+            training_args: TrainingArguments,
+            task_args: UniversalInformationExtractionTaskArguments,
+            **kwargs
+    ) -> PretrainedConfig:
+        return self.load_config(
+            training_args=training_args,
+            task_args=task_args,
+        )
+
+    def after_load_dataset(
+            self,
+            training_args: TrainingArguments,
+            task_args: Union[UniversalInformationExtractionTaskArguments, UniversalInformationExtractionTaskArguments],
+            raw_datasets: DatasetType,
+            **kwargs
+    ):
+        features = raw_datasets["train"].features
+        if task_args.prompt_column_name is not None:
+            self.prompt_column_name = task_args.prompt_column_name
+        else:
+            self.prompt_column_name = [k for k, v in features.items()
+                                       if isinstance(v, datasets.Value) and v.dtype == 'string'][0]
+
+        if task_args.text_column_name is not None:
+            self.text_column_name = task_args.text_column_name
+        else:
+            self.text_column_name = [k for k, v in features.items()
+                                     if isinstance(v, datasets.Value) and v.dtype == 'string'][1]
+
+        if task_args.entities_column_name is not None:
+            self.entities_column_name = task_args.entities_column_name
+        else:
+            self.entities_column_name = [k for k, v in features.items() if isinstance(v, datasets.Sequence)][1]
+
+    def init_data_preprocess_function(
+            self,
+            training_args: TrainingArguments,
+            task_args: Union[UniversalInformationExtractionTaskArguments, UniversalInformationExtractionTaskArguments],
+            raw_datasets: DatasetType,
+            config: PretrainedConfig,
+            tokenizer: PreTrainedTokenizer,
+            model: PreTrainedModel,
+            **kwargs
+    ) -> Callable:
+        return DataPreProcessForUniversalInformationExtraction(
+            tokenizer=tokenizer,
+            padding=("max_length"
+                     if task_args.pad_to_max_length else
+                     False),
+            max_seq_length=task_args.max_seq_length,
+            label_to_id=model.config.label2id,
+            prompt_key=task_args.prompt_column_name,
+            text_key=task_args.text_column_name,
+            entities_key=task_args.entities_column_name,
+        )
+
+    def init_data_collator_function(
+            self,
+            training_args: TrainingArguments,
+            task_args: UniversalInformationExtractionTaskArguments,
+            raw_datasets: DatasetType,
+            config: PretrainedConfig,
+            tokenizer: PreTrainedTokenizer,
+            model: PreTrainedModel,
+            data_preprocess_function: Optional[Callable] = None,
+            train_dataset=None,
+            eval_dataset=None,
+            predict_dataset=None,
+            **kwargs
+    ) -> Callable:
+        return DataCollatorForTokenClassification(tokenizer,
+                                                  pad_to_multiple_of=8 if training_args.fp16 else None)
+
+    def load_metrics(
+            self,
+            training_args: TrainingArguments,
+            task_args: UniversalInformationExtractionTaskArguments,
+            raw_datasets: DatasetType,
+            config: PretrainedConfig,
+            tokenizer: PreTrainedTokenizer,
+            model: PreTrainedModel,
+            data_preprocess_function: Optional[Callable] = None,
+            train_dataset=None,
+            eval_dataset=None,
+            predict_dataset=None,
+            data_collator_function: Optional[Callable] = None,
+            **kwargs
+    ) -> Callable:
+        return ComputeMetricsForUniversalInformationExtraction()
+
+    def after_init_trainer(
+            self,
+            training_args: TrainingArguments,
+            task_args: Union[
+                UniversalInformationExtractionTaskArguments,
+                UniversalInformationExtractionPredictArguments
+            ],
+            raw_datasets: DatasetType,
+            config: PretrainedConfig,
+            tokenizer: PreTrainedTokenizer,
+            model: PreTrainedModel,
+            data_preprocess_function: Optional[Callable] = None,
+            train_dataset=None,
+            eval_dataset=None,
+            predict_dataset=None,
+            data_collator_function: Optional[Callable] = None,
+            compute_metrics_function: Optional[Callable] = None,
+            trainer: Optional[Trainer] = None,
+            **kwargs
+    ):
+        # 添加label name
+        trainer.label_names = ['start_positions', 'end_positions']
+
+    def predict_result_parser(self,
+                              training_args: TrainingArguments,
+                              task_args: Union[
+                                  UniversalInformationExtractionTaskArguments,
+                                  UniversalInformationExtractionPredictArguments
+                              ],
+                              last_checkpoint,
+                              raw_datasets: DatasetType,
+                              config: PretrainedConfig,
+                              tokenizer: PreTrainedTokenizer,
+                              model: PreTrainedModel,
+                              predict_dataset,
+                              trainer: Trainer,
+                              predictions: trainer_utils.PredictionOutput,
+                              **kwargs
+                              ) -> Any:
+        predictions_entities = []
+        start_positions, end_positions = predictions.predictions
+        for prompt, content, token_type_id, offset_mapping, start_position, end_position in zip(
+                predict_dataset['prompt'], predict_dataset['content'], predict_dataset['token_type_ids'],
+                predict_dataset['offset_mapping'], start_positions, end_positions
+        ):
+            prediction_entities = []
+            for start_id, end_id in zip(np.argwhere(start_position > .5).reshape(-1),
+                                        np.argwhere(end_position > .5).reshape(-1)):
+                true_start_id = offset_mapping[start_id][0]
+                true_end_id = offset_mapping[end_id][1]
+                if token_type_id[start_id] == 0:
+                    prediction_entities.append(
+                        {
+                            'text': prompt[true_start_id:true_end_id]
+                        }
+                    )
+                else:
+                    prediction_entities.append(
+                        {
+                            'text': content[true_start_id:true_end_id],
+                            'start': true_start_id,
+                            'end': true_end_id
+                        }
+                    )
+            predictions_entities.append(prediction_entities)
+        return predictions_entities
+
+    def save_trainer_predict_result(self,
+                                    training_args: TrainingArguments,
+                                    task_args: Union[
+                                        UniversalInformationExtractionTaskArguments,
+                                        UniversalInformationExtractionPredictArguments
+                                    ],
+                                    trainer: Trainer,
+                                    predict_dataset,
+                                    result: Any
+                                    ):
+        output_predictions_file = os.path.join(training_args.output_dir, "predict_results.jsonl")
+        if trainer.is_world_process_zero():
+            with open(output_predictions_file, 'w', encoding='utf-8') as f:
+                for index, predictions in enumerate(result):
+                    row = json.dumps({'idx': index, 'predictions': predictions}, ensure_ascii=False)
+                    f.write(f"{row}\n")
+            logger.info("Predict results saved at {}".format(output_predictions_file))
+
+    def after_load_data_from_file_for_predict(self, training_args: TrainingArguments,
+                                              predict_args: UniversalInformationExtractionPredictArguments,
+                                              data: pd.DataFrame, **kwargs):
+        if predict_args.text_column_name not in data.columns:
+            raise ValueError(f"Column {predict_args.text_column_name} not in data!")
+
+    def save_result_for_predict(
+            self, training_args: TrainingArguments,
+            predict_args: UniversalInformationExtractionPredictArguments,
+            data: pd.DataFrame,
+            result: Any,
+            config: Optional[PretrainedConfig] = None,
+            tokenizer: Optional[PreTrainedTokenizer] = None,
+            model: Optional[PreTrainedModel] = None,
+    ) -> str:
+        data['predictions'] = [json.dumps(r, ensure_ascii=False) for r in result]
+        result_output_path = os.path.join(predict_args.result_output_dir, 'predictions.csv')
+        data.to_csv(result_output_path, index=False, encoding='utf-8-sig')
+        return result_output_path
+
+    def predict(self, predict_args: UniversalInformationExtractionPredictArguments):
+        if predict_args.schema is None:
+            raise ValueError(f"Schema must be provided!")
+        training_args = TrainingArguments(output_dir=predict_args.result_output_dir,
+                                          per_device_eval_batch_size=predict_args.per_device_batch_size,
+                                          report_to=predict_args.report_to)
+        self.set_logger(training_args=training_args)
+        schema = SchemaForBatch(schema=predict_args.schema)
+
+        if predict_args.result_output_dir is None or predict_args.result_output_dir == "":
+            raise ValueError(f"result_output_dir must be specified!")
+        if not os.path.exists(predict_args.result_output_dir):
+            os.makedirs(predict_args.result_output_dir)
+
+        self._predict_data, self._predict_columns = self.load_data_from_file_for_predict(training_args=training_args,
+                                                                                         predict_args=predict_args)
+        self.after_load_data_from_file_for_predict(training_args=training_args, predict_args=predict_args,
+                                                   data=self._predict_data)
+
+        # 加载 Config
+        self._config = self.load_config(training_args=training_args, task_args=predict_args)
+        # 加载 Tokenizer
+        self._tokenizer = self.load_tokenizer(training_args=training_args, task_args=predict_args, config=self._config)
+        # 加载模型
+        self._model = self.load_model(training_args=training_args, task_args=predict_args, config=self._config,
+                                      tokenizer=self._tokenizer)
+        logger.info(f"Schema: {schema.as_schema_dict}")
+        result = self.predict_batch(schema=schema,
+                                    texts=self._predict_data[predict_args.text_column_name].fillna('').tolist(),
+                                    tokenizer=self._tokenizer,
+                                    model=self._model,
+                                    split_text=predict_args.split_text,
+                                    inference_batch_size=predict_args.per_device_batch_size,
+                                    text_batch_size=predict_args.per_device_batch_size,
+                                    text_max_length=predict_args.max_text_split_length,
+                                    token_max_length=predict_args.max_seq_length,
+                                    truncation=True
+                                    )
+
+        # 保存数据
+        result_path = self.save_result_for_predict(training_args=training_args, predict_args=predict_args,
+                                                   data=self._predict_data, result=result,
+                                                   config=self._config, tokenizer=self._tokenizer, model=self._model
+                                                   )
+        return result_path

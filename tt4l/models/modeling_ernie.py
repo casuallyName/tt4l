@@ -138,3 +138,12 @@ class ErnieForUniversalInformationExtraction(ErniePreTrainedModel):
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
         )
+
+    def save_pretrained(self, save_directory, **kwargs):
+        # Make tensors contiguous
+        for name, param in self.named_parameters():
+            if not param.is_contiguous():
+                param.data = param.data.contiguous()
+
+        # Call the original save_pretrained method
+        super().save_pretrained(save_directory, **kwargs)

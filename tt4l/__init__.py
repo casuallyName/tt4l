@@ -50,9 +50,16 @@ _factory_import_structure = {
     ],
 
     "factory.universal_information_extraction": [],
-    "factory.universal_information_extraction.factory": [
-        "UniversalInformationExtractionFactory",
+    "factory.universal_information_extraction.arguments": [
+        "UniversalInformationExtractionTaskArguments",
+        "UniversalInformationExtractionPredictArguments"
     ],
+    "factory.universal_information_extraction.data": [
+        "DataPreProcessForUniversalInformationExtraction"
+    ],
+    "factory.universal_information_extraction.factory": [
+        "UniversalInformationExtractionFactory"
+    ]
 }
 
 _layers_import_structure = {
@@ -87,12 +94,15 @@ _metrics_import_structure = {
     "metrics.compute": [],
 
     "metrics.compute.text_classification": [
-        "ComputeMseMetrics",
-        "ComputeAccuracyMetrics",
-        "ComputeF1Metrics",
+        "ComputeMetricsForMse",
+        "ComputeMetricsForAccuracy",
+        "ComputeMetricsForF1",
     ],
     "metrics.compute.token_classification": [
-        'ComputeSeqevalMetrics',
+        'ComputeMetricsWithSeqeval',
+    ],
+    "metrics.compute.universal_information_extraction": [
+        "ComputeMetricsForUniversalInformationExtraction",
     ],
 
     "metrics.evaluate": [],

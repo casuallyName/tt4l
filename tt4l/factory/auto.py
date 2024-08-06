@@ -10,6 +10,7 @@ import importlib
 FACTORY_MAP = {
     'text_classification': 'TextClassificationFactory',
     'token_classification': 'TokenClassificationFactory',
+    'universal_information_extraction': 'UniversalInformationExtractionFactory',
 }
 
 

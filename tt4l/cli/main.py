@@ -51,16 +51,17 @@ def tasks(zh: Annotated[bool, typer.Option('--zh', help="Show description use Ch
     from rich.style import Style
     from rich.progress import track
     console = Console()
-    table = Table(title='Available Tasks Description', show_lines=True)
-    table.add_column("Args", style=Style(color='blue'))
-    table.add_column("Task Name", style=Style(color='magenta'))
-    table.add_column("Short Description")
+
+    table = Table(title="已支持的任务" if zh else 'Available Tasks Description', show_lines=True)
+    table.add_column("参数" if zh else "Args", style=Style(color='blue'))
+    table.add_column("任务名称" if zh else "Task Name", style=Style(color='magenta'))
+    table.add_column("简介" if zh else "Short Description")
     for task_type in track(FACTORY_MAP.keys(), description="Finding task"):
         task = AutoFactory.from_task_type(task_type=task_type)
         table.add_row(
             task_type,
             task.tasks_name.replace('-', ' ').title(),
-            '\n'.join(task.description_zh.split('，')) if zh else task.description
+            '，\n'.join(task.description_zh.split('，')) if zh else task.description
         )
     console.print(table)
 

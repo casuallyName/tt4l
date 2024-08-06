@@ -87,6 +87,15 @@ class Node(BaseModel):
         return join_str.join(reprs)
 
     @property
+    def as_schema_dict(self):
+        if self.is_end:
+            return self.name
+        else:
+            return {
+                self.name: [c.as_schema_dict for c in self._children]
+            }
+
+    @property
     def is_end(self):
         return self._is_end
 
@@ -153,6 +162,10 @@ class Schema(BaseModel):
             reprs.append("children=[...]")
 
         return join_str.join(reprs)
+
+    @property
+    def as_schema_dict(self) -> List:
+        return [child.as_schema_dict for child in self._children]
 
     @property
     def results(self) -> Dict[str, List[Result]]:
