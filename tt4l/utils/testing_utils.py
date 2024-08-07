@@ -44,7 +44,7 @@ class BaseTestCase(TestCase):
     @staticmethod
     def model_import_test(import_path):
         path = import_path.split('.')
-        for i in range(1, len(path) - 1):
+        for i in range(1, len(path)):
             try:
                 importlib.import_module('.'.join(path[:i]))
             except:
