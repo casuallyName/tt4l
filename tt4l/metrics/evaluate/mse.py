@@ -18,7 +18,7 @@ import datasets
 import evaluate
 
 try:
-    from sklearn.metrics import mean_squared_error
+    from sklearn.metrics import mean_squared_error, root_mean_squared_error
 except (ImportError, ModuleNotFoundError):
     raise ImportError("No module named 'sklearn', use 'pip install scikit-learn' to install it.")
 
@@ -113,9 +113,13 @@ class Mse(evaluate.Metric):
             }
 
     def _compute(self, predictions, references, sample_weight=None, multioutput="uniform_average", squared=True):
-
-        mse = mean_squared_error(
-            references, predictions, sample_weight=sample_weight, multioutput=multioutput, squared=squared
-        )
+        if squared:
+            mse = mean_squared_error(
+                references, predictions, sample_weight=sample_weight, multioutput=multioutput
+            )
+        else:
+            mse = root_mean_squared_error(
+                references, predictions, sample_weight=sample_weight, multioutput=multioutput
+            )
 
         return {"mse": mse}
