@@ -16,7 +16,7 @@ _import_structure = {
         'BertForEntitySpanClassification',
     ],
     "modeling_ernie": [
-        "ErnieForUie"
+        "ErnieForUniversalInformationExtraction"
     ],
 }
 
