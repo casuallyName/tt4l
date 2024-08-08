@@ -110,9 +110,8 @@ class _BaseTaskDatasetFactory:
             data = pd.read_excel(predict_args.data_path)
         else:
             data = pd.read_csv(predict_args.data_path)
-        logger.critical('Delete data.head(100)')
 
-        return data.head(100), data.columns.tolist()
+        return data
 
     def init_predict_dataset_from_dataframe(
             self, training_args: TrainingArguments, predict_args: BasePredictArguments, data: pd.DataFrame,
