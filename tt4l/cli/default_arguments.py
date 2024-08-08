@@ -42,7 +42,12 @@ class DefaultTrainingArguments:
     warmup_ratio: float = TrainingArguments.warmup_ratio
     warmup_steps: int = TrainingArguments.warmup_steps
 
-    eval_strategy: str = 'epoch'  # TrainingArguments.eval_strategy
+    # TrainingArguments.evaluation_strategy
+    if hasattr(TrainingArguments, 'eval_strategy'):
+        eval_strategy: str = 'epoch'
+    else:
+        evaluation_strategy: str = 'epoch'
+
     eval_delay: Optional[float] = TrainingArguments.eval_delay
     eval_steps: Optional[float] = TrainingArguments.eval_steps
 
