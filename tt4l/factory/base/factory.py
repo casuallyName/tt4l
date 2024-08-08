@@ -111,7 +111,7 @@ class _BaseTaskDatasetFactory:
         else:
             data = pd.read_csv(predict_args.data_path)
 
-        return data
+        return data, data.columns.tolist()
 
     def init_predict_dataset_from_dataframe(
             self, training_args: TrainingArguments, predict_args: BasePredictArguments, data: pd.DataFrame,
