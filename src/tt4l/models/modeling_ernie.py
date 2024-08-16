@@ -22,9 +22,9 @@ from transformers.models.ernie.modeling_ernie import (
 )
 from tt4l.loss import MultiLabelCategoricalCrossEntropy
 from tt4l.modeling_outputs import TokenDecodeClassifierOutput, UniversalInformationExtractionModelOutput
-from tt4l.modules.pointer import EntitySpan, EntityPointers
-from tt4l.modules.pooling import PoolingStrategy, HiddenStatesPooling
-from tt4l.modules.sequence import CRF
+from tt4l.layers.pointer import EntitySpan, EntityPointers
+from tt4l.layers.pooling import PoolingStrategy, HiddenStatesPooling
+from tt4l.layers.sequence import CRF
 
 
 class ErnieForUniversalInformationExtraction(ErniePreTrainedModel):
