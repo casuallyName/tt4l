@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tt4l"
-version = "0.0.1"
+version = "0.0.2"
 description = "Training a transformer model for language"
 authors = ["ZhouHang <fjklqq@gmail.com>"]
 readme = "README.md"
