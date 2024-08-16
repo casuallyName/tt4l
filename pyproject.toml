@@ -4,6 +4,9 @@ version = "0.0.1"
 description = "Training a transformer model for language"
 authors = ["ZhouHang <fjklqq@gmail.com>"]
 readme = "README.md"
+packages = [{ include = "tt4l", from = "src" }]
+license = "Apache-2.0"
+homepage = "https://github.com/casuallyName/tt4l"
 
 [tool.poetry.dependencies]
 python = "^3.10"
