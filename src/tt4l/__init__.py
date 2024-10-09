@@ -10,6 +10,7 @@ from tt4l.utils.import_utils import LazyModule
 _import_structure = {
     "cli": ['main'],
     "factory": [],
+    "functional":[],
     "layers": [],
     "loss": [],
     "metrics": [],
@@ -66,6 +67,13 @@ _factory_import_structure = {
     ],
     "factory.universal_information_extraction.factory": [
         "UniversalInformationExtractionFactory"
+    ]
+}
+
+_functional_import_structure = {
+    "functional.numpy": [
+        "softmax",
+        "sigmoid",
     ]
 }
 
@@ -143,6 +151,7 @@ _parser_import_structure = {
 }
 
 _import_structure.update(_factory_import_structure)
+_import_structure.update(_functional_import_structure)
 _import_structure.update(_layers_import_structure)
 _import_structure.update(_loss_import_structure)
 _import_structure.update(_models_import_structure)
@@ -150,6 +159,7 @@ _import_structure.update(_metrics_import_structure)
 _import_structure.update(_parser_import_structure)
 
 if TYPE_CHECKING:
+    from .functional import *
     from .factory import *
     from .layers import *
     from .loss import *
