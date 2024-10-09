@@ -28,6 +28,7 @@ from tt4l.factory.text_classification import (
     TextClassificationPredictArguments,
     TextClassificationTaskArguments,
 )
+from tt4l.functional import numpy as npf
 from tt4l.metrics.compute.text_classification import ComputeMetricsForAccuracy, ComputeMetricsForF1
 
 
@@ -259,12 +260,17 @@ class TextClassificationFactory(BaseTaskFactory):
                               ):
         predictions = predictions.predictions
         if model.config.problem_type == 'multi_label_classification':
+            scores = [
+                ';;'.join([str(npf.sigmoid(prediction)[item[0]]) for item in np.argwhere(prediction > 0)])
+                for prediction in predictions]
             predictions = [
                 ';;'.join([config.id2label[item[0]] for item in np.argwhere(prediction > 0)])
                 for prediction in predictions]
         else:
+            scores = [str(npf.softmax(prediction)[np.argmax(prediction)]) for prediction in predictions]
             predictions = [config.id2label[item] for item in np.argmax(predictions, axis=1)]
-        return predictions
+
+        return predictions, scores
 
     def save_trainer_predict_result(
             self,
@@ -358,7 +364,11 @@ class TextClassificationFactory(BaseTaskFactory):
             tokenizer: Optional[PreTrainedTokenizer] = None,
             model: Optional[PreTrainedModel] = None,
     ) -> str:
-        data['predictions'] = result
+        if isinstance(result, tuple):
+            data['prediction'] = result[0]
+            data['score'] = result[1]
+        else:
+            data['prediction'] = result
         result_output_path = os.path.join(predict_args.result_output_dir, 'predictions.csv')
         data.to_csv(result_output_path, index=False, encoding='utf-8-sig')
         return result_output_path
