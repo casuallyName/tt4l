@@ -17,7 +17,8 @@ from transformers import (trainer_utils, TrainingArguments, Trainer,
                           PreTrainedTokenizer, PretrainedConfig, PreTrainedModel, )
 from transformers.trainer import logger
 
-from factory.base.arguments import BaseTaskArguments, BasePredictArguments
+from .arguments import BaseTaskArguments, BasePredictArguments
+from ...utils.ploting import save_log_history_plots,is_matplotlib_available
 
 DatasetType = Union[datasets.Dataset, datasets.DatasetDict, datasets.IterableDatasetDict, datasets.IterableDataset]
 
@@ -783,6 +784,10 @@ class _BaseTaskTrainerFactory:
             trainer.push_to_hub(**kwargs)
         else:
             trainer.create_model_card(**kwargs)
+
+
+        if is_matplotlib_available():
+            save_log_history_plots(training_args.output_dir)
 
 
 class BaseTaskFactory(_BaseTaskUtilFactory,

@@ -11,6 +11,8 @@ from itertools import chain
 from types import ModuleType
 from typing import Any
 
+from packaging import version
+
 
 class LazyModule(ModuleType):
     """
@@ -74,6 +76,14 @@ class LazyModule(ModuleType):
 
 def _is_package_available(name: str) -> bool:
     return importlib.util.find_spec(name) is not None
+
+
+def _get_package_version(name: str) -> "Version":
+    try:
+        return version.parse(importlib.metadata.version(name))
+    except Exception:
+        return version.parse("0.0.0")
+
 
 def is_matplotlib_available():
     return _is_package_available("matplotlib")
