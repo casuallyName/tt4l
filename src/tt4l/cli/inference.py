@@ -11,7 +11,7 @@ import re
 import typer
 from rich.console import Console
 from rich.table import Table, Style
-from tt4l.cli.utils import echo_log_message
+from .utils import echo_log_message
 from typing_extensions import Annotated
 
 inference_app = typer.Typer()
@@ -34,7 +34,7 @@ def text_classification(
     echo_log_message('info', 'Loading models ...')
     import torch
     from transformers import AutoConfig, AutoTokenizer, AutoModelForSequenceClassification
-    from tt4l import TextClassificationFactory
+    from ..factory import TextClassificationFactory
     config = AutoConfig.from_pretrained(model_path, trust_remote_code=trust_remote_code)
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=trust_remote_code)
     model = AutoModelForSequenceClassification.from_pretrained(model_path, config=config,
@@ -73,7 +73,8 @@ def token_classification(
     echo_log_message('info', 'Loading models ...')
     import torch
     from transformers import AutoConfig, AutoTokenizer, AutoModelForTokenClassification
-    from tt4l import SequenceParser, TokenClassificationFactory
+    from ..parser import SequenceParser
+    from ..factory import TokenClassificationFactory
     config = AutoConfig.from_pretrained(model_path, trust_remote_code=trust_remote_code)
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=trust_remote_code)
     model = AutoModelForTokenClassification.from_pretrained(model_path, config=config,
@@ -119,8 +120,8 @@ def universal_information_extraction(
         raise FileNotFoundError(f"File {model_path} does not exist!")
     echo_log_message('info', 'Loading models ...')
     import torch
-    from tt4l.factory import UniversalInformationExtractionFactory
-    from tt4l.factory.universal_information_extraction.modules import Schema
+    from ..factory import UniversalInformationExtractionFactory
+    from ..factory.universal_information_extraction.modules import Schema
     from transformers import AutoConfig, AutoTokenizer, AutoModel
     config = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)

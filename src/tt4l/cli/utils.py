@@ -55,7 +55,7 @@ def _make_default_value(data_object):
 
 
 def init_yaml(task_type, task_args_cls, predict_args_cls, yaml_name, replace=False):
-    from tt4l.cli.default_arguments import DefaultTrainingArguments
+    from .default_arguments import DefaultTrainingArguments
     yaml_path = os.path.join(os.getcwd(), yaml_name)
     if os.path.exists(yaml_path) and replace is False:
         echo_log_message(log_level='warning',

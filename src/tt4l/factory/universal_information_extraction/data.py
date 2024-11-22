@@ -9,7 +9,7 @@ __all__ = ["DataPreProcessForUniversalInformationExtraction"]
 from typing import Optional, Union
 
 import numpy as np
-from tt4l.factory.base.data_process import DataPreProcess
+from ...factory.base.data_process import DataPreProcess
 
 
 class DataPreProcessForUniversalInformationExtraction(DataPreProcess):

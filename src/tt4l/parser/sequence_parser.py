@@ -10,7 +10,7 @@ from enum import Enum
 from typing import Dict, List, Union
 
 import numpy as np
-from tt4l.parser.base import BaseParser, Node, Nodes
+from ..parser.base import BaseParser, Node, Nodes
 
 
 class SequenceType(Enum):

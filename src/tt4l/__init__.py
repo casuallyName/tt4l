@@ -5,12 +5,13 @@
 # @About    :
 from typing import TYPE_CHECKING
 
-from tt4l.utils.import_utils import LazyModule
+from .utils.env import VERSION
+from .utils.import_utils import LazyModule
 
 _import_structure = {
     "cli": ['main'],
     "factory": [],
-    "functional":[],
+    "functional": [],
     "layers": [],
     "loss": [],
     "metrics": [],
@@ -171,4 +172,10 @@ if TYPE_CHECKING:
 else:
     import sys
 
-    sys.modules[__name__] = LazyModule(__name__, globals()["__file__"], _import_structure, module_spec=__spec__)
+    sys.modules[__name__] = LazyModule(
+        __name__,
+        globals()["__file__"],
+        _import_structure,
+        module_spec=__spec__,
+        extra_objects={"__version__": VERSION},
+    )

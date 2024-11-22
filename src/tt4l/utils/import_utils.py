@@ -70,3 +70,10 @@ class LazyModule(ModuleType):
 
     def __reduce__(self):
         return (self.__class__, (self._name, self.__file__, self._import_structure))
+
+
+def _is_package_available(name: str) -> bool:
+    return importlib.util.find_spec(name) is not None
+
+def is_matplotlib_available():
+    return _is_package_available("matplotlib")

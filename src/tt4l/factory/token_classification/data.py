@@ -7,7 +7,7 @@ __all__ = ["DataPreProcessForTokenClassification"]
 
 from typing import Optional, Union
 
-from tt4l.factory.base.data_process import DataPreProcess
+from ...factory.base.data_process import DataPreProcess
 
 
 class DataPreProcessForTokenClassification(DataPreProcess):

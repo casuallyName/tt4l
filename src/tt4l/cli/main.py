@@ -10,9 +10,9 @@ from typing import Annotated
 
 import typer
 import yaml
-from tt4l.cli.inference import inference_app
-from tt4l.cli.utils import echo_error_info, echo_log_message, init_yaml
-from tt4l.factory.auto import AutoFactory, TaskFactoryNotFound, FACTORY_MAP
+from .inference import inference_app
+from .utils import echo_error_info, echo_log_message, init_yaml
+from ..factory.auto import AutoFactory, TaskFactoryNotFound, FACTORY_MAP
 
 app = typer.Typer(name='tt4l',
                   help='Training a transformer model for language',

@@ -8,7 +8,7 @@ __all__ = ["UniversalInformationExtractionTaskArguments", "UniversalInformationE
 from dataclasses import dataclass, field
 from typing import Optional, Union, List, Dict
 
-from tt4l.factory.base.arguments import BaseTaskArguments, BasePredictArguments
+from ...factory.base.arguments import BaseTaskArguments, BasePredictArguments
 
 
 @dataclass

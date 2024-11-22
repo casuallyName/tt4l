@@ -6,7 +6,7 @@
 
 from typing import TYPE_CHECKING
 
-from tt4l.utils.import_utils import LazyModule
+from ..utils.import_utils import LazyModule
 
 _import_structure = {
     "multi_label_categorical_cross_entropy": [

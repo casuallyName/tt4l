@@ -9,7 +9,7 @@ __all__ = ["TextClassificationTaskArguments",
 from dataclasses import dataclass, field
 from typing import Optional
 
-from tt4l.factory.base.arguments import BaseTaskArguments, BasePredictArguments
+from ...factory.base.arguments import BaseTaskArguments, BasePredictArguments
 
 
 @dataclass

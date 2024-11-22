@@ -8,8 +8,8 @@ __all__ = ['ComputeMetricsWithSeqeval']
 from typing import Dict
 
 import numpy as np
-from tt4l.metrics.base import BaseComputeMetric, MetricInput
-from tt4l.metrics.evaluate.seqeval import Seqeval
+from ..base import BaseComputeMetric, MetricInput
+from ..evaluate.seqeval import Seqeval
 
 
 class ComputeMetricsWithSeqeval(BaseComputeMetric):

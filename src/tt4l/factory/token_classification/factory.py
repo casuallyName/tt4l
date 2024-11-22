@@ -26,16 +26,17 @@ from transformers import (
     trainer_utils, AutoModelForTokenClassification, PreTrainedTokenizerBase
 )
 from transformers.trainer import logger
-from tt4l.factory.base import DatasetType, BaseTaskFactory
-from tt4l.factory.token_classification import (
+
+from . import utils
+from .arguments import (
     TokenClassificationTaskArguments,
     TokenClassificationPredictArguments,
-    DataPreProcessForTokenClassification,
-    utils
 )
-from tt4l.metrics.compute.token_classification import ComputeMetricsWithSeqeval
-from tt4l.modeling_outputs import TokenDecodeClassifierOutput
-from tt4l.parser.sequence_parser import SequenceParser
+from .data import DataPreProcessForTokenClassification
+from ...factory.base import DatasetType, BaseTaskFactory
+from ...metrics.compute.token_classification import ComputeMetricsWithSeqeval
+from ...modeling_outputs import TokenDecodeClassifierOutput
+from ...parser.sequence_parser import SequenceParser
 
 
 class TokenClassificationFactory(BaseTaskFactory):
@@ -288,7 +289,7 @@ class TokenClassificationFactory(BaseTaskFactory):
             trainer: Optional[Trainer] = None,
             **kwargs
     ):
-        from tt4l.optimizer_builder import OptimizerBuilderForCrf
+        from ...optimizer_builder import OptimizerBuilderForCrf
         # 放大crf层学习率
         logger.warning(
             "Use `OptimizerBuilderForCrf.get_optimizer_cls_and_kwargs` instead of `get_optimizer_cls_and_kwargs`.")

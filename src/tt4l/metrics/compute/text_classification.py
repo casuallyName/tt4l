@@ -8,10 +8,10 @@ __all__ = ["ComputeMetricsForMse", "ComputeMetricsForAccuracy", "ComputeMetricsF
 from typing import Dict, Literal
 
 import numpy as np
-from tt4l.metrics.base import BaseComputeMetric, MetricInput
-from tt4l.metrics.evaluate.accuracy import Accuracy
-from tt4l.metrics.evaluate.f1 import F1
-from tt4l.metrics.evaluate.mse import Mse
+from ..base import BaseComputeMetric, MetricInput
+from ..evaluate.accuracy import Accuracy
+from ..evaluate.f1 import F1
+from ..evaluate.mse import Mse
 
 
 class ComputeMetricsForMse(BaseComputeMetric):

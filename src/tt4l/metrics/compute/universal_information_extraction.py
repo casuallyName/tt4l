@@ -8,7 +8,7 @@ __all__ = ['ComputeMetricsForUniversalInformationExtraction']
 from typing import Dict
 
 import numpy as np
-from tt4l.metrics.base import BaseComputeMetric, MetricInput
+from ..base import BaseComputeMetric, MetricInput
 
 
 class ComputeMetricsForUniversalInformationExtraction(BaseComputeMetric):

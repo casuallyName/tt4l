@@ -22,14 +22,15 @@ from transformers import (
     Trainer, PreTrainedTokenizerBase, AutoModelForSequenceClassification
 )
 from transformers.trainer import logger
-from tt4l.factory.base import BaseTaskFactory, DatasetType
-from tt4l.factory.text_classification import (
-    DataPreProcessForSequenceClassification,
+
+from .arguments import (
     TextClassificationPredictArguments,
     TextClassificationTaskArguments,
 )
-from tt4l.functional import numpy as npf
-from tt4l.metrics.compute.text_classification import ComputeMetricsForAccuracy, ComputeMetricsForF1
+from .data import DataPreProcessForSequenceClassification
+from ...factory.base import BaseTaskFactory, DatasetType
+from ...functional import numpy as npf
+from ...metrics.compute.text_classification import ComputeMetricsForAccuracy, ComputeMetricsForF1
 
 
 class TextClassificationFactory(BaseTaskFactory):

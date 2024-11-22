@@ -16,7 +16,8 @@ from transformers import (trainer_utils, TrainingArguments, Trainer,
                           AutoConfig, AutoTokenizer,
                           PreTrainedTokenizer, PretrainedConfig, PreTrainedModel, )
 from transformers.trainer import logger
-from tt4l.factory.base.arguments import BaseTaskArguments, BasePredictArguments
+
+from factory.base.arguments import BaseTaskArguments, BasePredictArguments
 
 DatasetType = Union[datasets.Dataset, datasets.DatasetDict, datasets.IterableDatasetDict, datasets.IterableDataset]
 

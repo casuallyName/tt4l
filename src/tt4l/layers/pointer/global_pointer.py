@@ -8,7 +8,7 @@ __all__ = ['GlobalPointer', 'EfficientGlobalPointer']
 import torch
 import torch.nn as nn
 
-from tt4l.layers.encoder.position import SinusoidalPositionEmbedding
+from ..encoder.position import SinusoidalPositionEmbedding
 
 
 def sequence_masking(x, mask, value='-inf', axis=None):

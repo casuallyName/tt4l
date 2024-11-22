@@ -26,20 +26,20 @@ from transformers import (
     trainer_utils
 )
 from transformers.trainer import logger
-from tt4l.factory.base import BaseTaskFactory, DatasetType
-from tt4l.factory.universal_information_extraction.arguments import (
+from ...factory.base import BaseTaskFactory, DatasetType
+from ...factory.universal_information_extraction.arguments import (
     UniversalInformationExtractionTaskArguments,
     UniversalInformationExtractionPredictArguments
 )
-from tt4l.factory.universal_information_extraction.data import DataPreProcessForUniversalInformationExtraction
-from tt4l.factory.universal_information_extraction.modules import (
+from .data import DataPreProcessForUniversalInformationExtraction
+from .modules import (
     PositionInfo,
     Schema,
     Result,
     SchemaForBatch
 )
-from tt4l.metrics.compute.universal_information_extraction import ComputeMetricsForUniversalInformationExtraction
-from tt4l.text_utils import ChineseSentenceSpliter
+from ...metrics.compute.universal_information_extraction import ComputeMetricsForUniversalInformationExtraction
+from ...text_utils import ChineseSentenceSpliter
 
 
 class UniversalInformationExtractionFactory(BaseTaskFactory):
