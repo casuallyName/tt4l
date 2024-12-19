@@ -286,7 +286,8 @@ class TextClassificationFactory(BaseTaskFactory):
             data = pd.DataFrame({'text': predict_dataset[task_args.text_column_name]})
             if task_args.text_pair_column_name:
                 data['text_pair'] = predict_dataset[task_args.text_pair_column_name]
-            data['labels'] = result
+            data['labels'] = result[0]
+            data['scores'] = result[1]
             data.to_csv(output_predictions_file, index=False, encoding='utf-8-sig')
 
             logger.info("Predict results saved at {}".format(output_predictions_file))

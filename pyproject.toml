@@ -6,7 +6,7 @@ authors = ["ZhouHang <fjklqq@gmail.com>"]
 readme = "README.md"
 packages = [{ include = "tt4l", from = "src" }]
 license = "Apache-2.0"
-homepage = "https://github.com/casuallyName/tt4l"
+homepage = "https://github.com/fjklqq/tt4l"
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -24,10 +24,6 @@ matplotlib = "^3.9.2"
 [tool.poetry.scripts]
 tt4l = "tt4l.cli.main:app"
 
-[[tool.poetry.source]]
-name = "mirrors"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
-priority = "primary"
 
 [build-system]
 requires = ["poetry-core"]
